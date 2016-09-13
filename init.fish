@@ -13,6 +13,52 @@ if not type -q npm
   end
 end
 
-if not contains ./node_modules/.bin $PATH
-  set PATH ./node_modules/.bin $PATH
+function __update_node_paths --on-variable PWD --description "check dir"
+    status --is-command-substitution; and return
+
+    # These should probably be config variables, but I'm feeling lazy.
+    set workDir "$HOME/work"
+    set nodeModules "node_modules/.bin"
+
+    # Remove work dir node modules from path
+    set x 1
+    for path in $PATH
+        # echo "checking \^$workDir/.*/$nodeModules against $path"
+        if string match -r -q "^$workDir/.*/$nodeModules" "$path"
+            set --erase PATH[$x]
+            # echo "PATH is now $PATH"
+        end
+        set x (math x + 1)
+    end
+
+    set currentDir (pwd)
+
+    # pop directories off current dir until we find node_modules or
+    # we exit the work dir.
+    while true;
+        if not string match -r -q "^$workDir/.*" "$currentDir"
+            # echo "Not in work dir"
+            break
+        end
+        set nodePath (string join / $currentDir node_modules/.bin)
+
+        # Add the first node_modules directory found to the PATH
+        if test -d $nodePath
+            if not contains $nodePath $PATH
+              set PATH $nodePath $PATH
+              # echo "Adding path:$nodePath"
+            end
+            break
+        end
+
+        # Abort when we reach the root dir "/"
+        if test $currentDir = (dirname $currentDir)
+            break
+        end
+
+        set currentDir (dirname $currentDir)
+    end
+
 end
+
+__update_node_paths
