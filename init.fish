@@ -28,7 +28,7 @@ function __update_node_paths --on-variable PWD --description "check dir"
             set --erase PATH[$x]
             # echo "PATH is now $PATH"
         end
-        set x (math x + 1)
+        set x (math --scale $x + 1)
     end
 
     set currentDir (pwd)
